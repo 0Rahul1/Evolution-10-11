@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .controls {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        input, select, button {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .post {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .post:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="Search posts...">
+            <select id="authorFilter">
+                <option value="">All Authors</option>
+            </select>
+            <button onclick="toggleSort()">Sort by Title</button>
+        </div>
+        <div id="posts"></div>
+        <div class="pagination">
+            <button onclick="previousPage()">Previous</button>
+            <span id="pageInfo">Page 1</span>
+            <button onclick="nextPage()">Next</button>
+        </div>
+    </div>
+
+    <script>
+
+        const blogPosts = [
+            {
+                id: 1,
+                title: "First Blog Post",
+                content: "This is the content of the first blog post. It talks about interesting topics.",
+                author: "John Doe",
+                comments: [
+                    { author: "Alice", text: "Great post!" },
+                    { author: "Bob", text: "Very informative!" }
+                ]
+            },
+            {
+                id: 2,
+                title: "Web Development Tips",
+                content: "Here are some useful tips for web development. Learning HTML, CSS, and JavaScript is essential.",
+                author: "Jane Smith",
+                comments: [
+                    { author: "Charlie", text: "Thanks for the tips!" }
+                ]
+            },
+            {
+                id: 3,
+                title: "JavaScript Basics",
+                content: "JavaScript is a powerful programming language. Let's learn about variables and functions.",
+                author: "John Doe",
+                comments: [
+                    { author: "David", text: "This helped me a lot!" }
+                ]
+            },
+            {
+                id: 4,
+                title: "CSS Styling Guide",
+                content: "CSS helps make your websites beautiful. Here's how to use it effectively.",
+                author: "Sarah Wilson",
+                comments: [
+                    { author: "Eve", text: "Beautiful examples!" }
+                ]
+            },
+            {
+                id: 5,
+                title: "HTML Structure",
+                content: "Understanding HTML structure is key to web development. Let's explore tags and elements.",
+                author: "Jane Smith",
+                comments: [
+                    { author: "Frank", text: "Very clear explanation" }
+                ]
+            }
+        ];
+
+
+        let currentPage = 1;
+        const postsPerPage = 3;
+        let isAscending = true;
+        let filteredPosts = [...blogPosts];
+
+        function init() {
+            
+            const authors = [...new Set(blogPosts.map(post => post.author))];
+            const authorFilter = document.getElementById('authorFilter');
+            authors.forEach(author => {
+                const option = document.createElement('option');
+                option.value = author;
+                option.textContent = author;
+                authorFilter.appendChild(option);
+            });
+
+            displayPosts();
+        }
+
+        
+        function displayPosts() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const selectedAuthor = document.getElementById('authorFilter').value;
+
+            
+            filteredPosts = blogPosts.filter(post => {
+                const matchesSearch = post.title.toLowerCase().includes(searchTerm) || 
+                                    post.content.toLowerCase().includes(searchTerm);
+                const matchesAuthor = !selectedAuthor || post.author === selectedAuthor;
+                return matchesSearch && matchesAuthor;
+            });
+
+          
+            filteredPosts.sort((a, b) => {
+                return isAscending ? 
+                    a.title.localeCompare(b.title) : 
+                    b.title.localeCompare(a.title);
+            });
+
+            
+            const start = (currentPage - 1) * postsPerPage;
+            const paginatedPosts = filteredPosts.slice(start, start + postsPerPage);
+
+          
+            const postsContainer = document.getElementById('posts');
+            postsContainer.innerHTML = '';
+
+            paginatedPosts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.className = 'post';
+                postElement.innerHTML = `
+                    <h2>${post.title}</h2>
+                    <p>${post.content}</p>
+                    <small>Written by: ${post.author}</small>
+                `;
+                postElement.onclick = () => showPostDetails(post);
+                postsContainer.appendChild(postElement);
+            });
+
+          
+            updatePaginationInfo();
+        }
+
+        
+        function showPostDetails(post) {
+            const newWindow = window.open('', '_blank');
+            newWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>${post.title}</title>
+                    <style>
+                        body { 
+                            font-family: Arial; 
+                            max-width: 800px; 
+                            margin: 20px auto; 
+                            padding: 20px; 
+                        }
+                        .comment { 
+                            background: #f0f0f0; 
+                            padding: 10px; 
+                            margin: 10px 0; 
+                            border-radius: 5px; 
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>${post.title}</h1>
+                    <p>${post.content}</p>
+                    <p><strong>Author: ${post.author}</strong></p>
+                    <h2>Comments:</h2>
+                    ${post.comments.map(comment => `
+                        <div class="comment">
+                            <strong>${comment.author}</strong>
+                            <p>${comment.text}</p>
+                        </div>
+                    `).join('')}
+                </body>
+                </html>
+            `);
+        }
+
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayPosts();
+            }
+        }
+
+        function nextPage() {
+            const maxPages = Math.ceil(filteredPosts.length / postsPerPage);
+            if (currentPage < maxPages) {
+                currentPage++;
+                displayPosts();
+            }
+        }
+
+        function updatePaginationInfo() {
+            const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+            document.getElementById('pageInfo').textContent = 
+                `Page ${currentPage} of ${totalPages}`;
+        }
+
+        function toggleSort() {
+            isAscending = !isAscending;
+            displayPosts();
+        }
+        document.getElementById('searchInput').addEventListener('input', displayPosts);
+        document.getElementById('authorFilter').addEventListener('change', displayPosts);
+
+   
+        init();
+    </script>
+</body>
+</html>
